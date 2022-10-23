@@ -28,6 +28,15 @@ public class DbConnector {
                       name VARCHAR(255) UNIQUE NOT NULL);
                     """;
             stmt.executeUpdate(sql);
+
+            sql = """
+                CREATE TABLE IF NOT EXISTS car
+                (id INTEGER PRIMARY KEY AUTO_INCREMENT, name VARCHAR(100) UNIQUE NOT NULL,
+                company_id INTEGER NOT NULL,
+                CONSTRAINT fk_company FOREIGN KEY(company_id)
+                REFERENCES company(id));
+                    """;
+            stmt.execute(sql);
             stmt.close();
             conn.close();
         } catch (Exception se) {

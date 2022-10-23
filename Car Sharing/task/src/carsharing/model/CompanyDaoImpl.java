@@ -6,6 +6,7 @@ import carsharing.DbConnector;
 
 public class CompanyDaoImpl implements CompanyDao {
     private static final String SELECT_ALL = "SELECT name FROM company ORDER BY ID;";
+    public static final String SELECT_ID = "SELECT id FROM company WHERE name = '%s';";
     public static final String INSERT = "INSERT INTO company (name) VALUES ('%s');";
     private final DbConnector db;
 
@@ -28,7 +29,9 @@ public class CompanyDaoImpl implements CompanyDao {
 
     @Override
     public int getCompanyId(String name) {
-        return 0;
+        return Integer.valueOf(db.selectStrings(String.format(SELECT_ID, name))
+                .get(0)
+        );
     }
 
 }
