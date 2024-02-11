@@ -9,59 +9,74 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DbConnector {
-    private String DB_URL;
+
+    private static Connection connection = null;
+    private static String DB_URL;
 
     DbConnector(String db) {
-        this.DB_URL = "jdbc:h2:./src/carsharing/db/" + db;
+        DB_URL = "jdbc:h2:./src/carsharing/db/" + db;
     }
 
     public void createTables() {
-        Connection conn = null;
-        Statement stmt = null;
-        try {
-            conn = DriverManager.getConnection(DB_URL);
+        try (Connection conn = DriverManager.getConnection(DB_URL);
+             Statement stmt = conn.createStatement()
+        ) {
+
             conn.setAutoCommit(true);
-            stmt = conn.createStatement();
             String sql = """
                     CREATE TABLE IF NOT EXISTS COMPANY(
                       id INTEGER PRIMARY KEY AUTO_INCREMENT,
                       name VARCHAR(255) UNIQUE NOT NULL);
                     """;
-            stmt.executeUpdate(sql);
+            stmt.execute(sql);
 
             sql = """
-                CREATE TABLE IF NOT EXISTS car
-                (id INTEGER PRIMARY KEY AUTO_INCREMENT, name VARCHAR(100) UNIQUE NOT NULL,
+                CREATE TABLE IF NOT EXISTS car(
+                id INTEGER PRIMARY KEY AUTO_INCREMENT, name VARCHAR(100) UNIQUE NOT NULL,
                 company_id INTEGER NOT NULL,
+                is_rented BOOLEAN NOT NULL DEFAULT false,
                 CONSTRAINT fk_company FOREIGN KEY(company_id)
                 REFERENCES company(id));
                     """;
             stmt.execute(sql);
-            stmt.close();
-            conn.close();
+
+            sql = """
+                CREATE TABLE IF NOT EXISTS customer(
+                id INT PRIMARY KEY AUTO_INCREMENT,
+                name VARCHAR(255) UNIQUE NOT NULL,
+                rented_car_id INT NULL,
+                CONSTRAINT fk_car FOREIGN KEY (rented_car_id) REFERENCES car(id));""";
+            stmt.execute(sql);
         } catch (Exception se) {
             se.printStackTrace();
-        } finally {
+        }
+    }
+
+    public static Connection getConnection() {
+        if (connection == null) {
             try {
-                if (stmt != null) {
-                    stmt.close();
-                }
-            } catch (SQLException se2) {
-                se2.printStackTrace();
-            }
-            try {
-                if (conn != null) {
-                    conn.close();
-                }
-            } catch (SQLException se) {
-                se.printStackTrace();
+                connection = DriverManager.getConnection(DB_URL);
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
             }
         }
+        return connection;
+    }
+
+    public static void closeConnection() {
+        if (connection != null) {
+            try {
+                connection.close();
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        connection = null;
     }
 
     public List<String> selectStrings(String query) {
         try (Connection conn = DriverManager.getConnection(DB_URL);
-             Statement stmt = conn.createStatement();
+             Statement stmt = conn.createStatement()
         ) {
             conn.setAutoCommit(true);
             ResultSet rs = stmt.executeQuery(query);
