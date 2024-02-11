@@ -42,13 +42,26 @@ public class CustomerDaoImpl implements CustomerDao {
 
     @Override
     public Customer getCustomer(int id) {
-        return null;
+        try (var stmt = DbConnector.getConnection().prepareStatement(SELECT)) {
+            stmt.setInt(1, id);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return convertToCustomer(rs);
+            }
+            return null;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public void setCar(Customer customer, int i) {
         try (var stmt = DbConnector.getConnection().prepareStatement(UPDATE_CAR)) {
-            stmt.setInt(1, i);
+            if (i == 0) {
+                stmt.setString(1, null);
+            } else {
+                stmt.setInt(1, i);
+            }
             stmt.setInt(2, customer.getId());
             stmt.executeUpdate();
         } catch (SQLException e) {

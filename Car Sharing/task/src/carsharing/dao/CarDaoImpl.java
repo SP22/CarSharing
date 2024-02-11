@@ -11,7 +11,7 @@ import java.util.List;
 public class CarDaoImpl implements CarDao {
 
     private static final String SELECT_ALL = "SELECT * FROM car WHERE company_id = ? ORDER BY ID";
-
+    public static final String SELECT_NOT_RENTED = "SELECT * FROM car WHERE company_id = ? AND is_rented = false ORDER BY ID";
     public static final String SELECT = "SELECT * FROM car WHERE id = ?";
     public static final String INSERT = "INSERT INTO car (name, company_id) VALUES (?, ?)";
     public static final String UPDATE_RENTED = "UPDATE car set is_rented = ? WHERE id = ?";
@@ -19,6 +19,21 @@ public class CarDaoImpl implements CarDao {
     @Override
     public List<Car> getCars(int companyId) {
         try (var stmt = DbConnector.getConnection().prepareStatement(SELECT_ALL)) {
+            stmt.setInt(1, companyId);
+            ResultSet rs = stmt.executeQuery();
+            List<Car> cars = new ArrayList<>();
+            while (rs.next()) {
+                cars.add(convertToCar(rs));
+            }
+            return cars;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public List<Car> getNotRentedCars(int companyId) {
+        try (var stmt = DbConnector.getConnection().prepareStatement(SELECT_NOT_RENTED)) {
             stmt.setInt(1, companyId);
             ResultSet rs = stmt.executeQuery();
             List<Car> cars = new ArrayList<>();
